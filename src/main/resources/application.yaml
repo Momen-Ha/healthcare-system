@@ -14,6 +14,13 @@ spring:
       username: neo4j
       password: momen@1234
 
+  influxdb:
+    url: http://localhost:8086
+    token: wZPA1Q4-00rgA57p9AVyrJCohrT65URVNEeszKk2AszAeBEazw_VHGZW9DfGBz7i8QVAv3lCu_p4kyUChlRRjQ==
+    org: healthcare
+    bucket: patient_measurements
+    retention-policy: 30d
+
 server:
   port: 8081
 

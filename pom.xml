@@ -60,6 +60,22 @@
             <artifactId>neo4j-java-driver</artifactId>
         </dependency>
 
+        <!-- Micrometer core & Influx registry -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-influx</artifactId>
+        </dependency> <!-- :contentReference[oaicite:0]{index=0} -->
+
+        <!-- InfluxDB Java client (v2+) -->
+        <dependency>
+            <groupId>com.influxdb</groupId>
+            <artifactId>influxdb-client-java</artifactId>
+            <version>7.0.0</version>
+        </dependency>
 
         <dependency>
             <groupId>com.github.javafaker</groupId>
