@@ -14,9 +14,11 @@ import java.util.UUID;
 public class PatientService {
 
     private final PatientRepository patientRepository;
+    private final RelationsService relationsService;
 
-    public PatientService(PatientRepository patientRepository) {
+    public PatientService(PatientRepository patientRepository, RelationsService relationsService) {
         this.patientRepository = patientRepository;
+        this.relationsService = relationsService;
     }
 
     private String generatePatientNumber() {
@@ -26,8 +28,9 @@ public class PatientService {
     }
 
     public Patient createPatient(PatientRequest patientRequest) {
+        String patientNumber = generatePatientNumber();
         Patient patient = Patient.builder()
-                .patientNumber(generatePatientNumber())
+                .patientNumber(patientNumber)
                 .fullName(patientRequest.getFullName())
                 .dateOfBirth(patientRequest.getDateOfBirth())
                 .gender(patientRequest.getGender())
@@ -38,7 +41,7 @@ public class PatientService {
                 .medicalInfo(patientRequest.getMedicalInfo())
                 .build();
 
-        patient.setPatientNumber(generatePatientNumber());
+        relationsService.createPatient(patientNumber, patientRequest.getFullName());
         return patientRepository.save(patient);
     }
 

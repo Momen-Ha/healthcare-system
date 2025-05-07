@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import ppu.momen.healthcare.model.MedicalInfo;
 import ppu.momen.healthcare.model.Patient;
 import ppu.momen.healthcare.repository.PatientRepository;
+import ppu.momen.healthcare.service.RelationsService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.List;
 public class PatientDataGenerator implements CommandLineRunner {
 
     private final PatientRepository patientRepository;
+    private final RelationsService relationsService;
     private final Faker faker = new Faker();
 
     @Override
@@ -34,7 +36,9 @@ public class PatientDataGenerator implements CommandLineRunner {
         List<Patient> patients = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
-            patients.add(createFakePatient());
+            Patient p = createFakePatient();
+            relationsService.createPatient(p.getPatientNumber(), p.getFullName());
+            patients.add(p);
         }
 
         return patients;

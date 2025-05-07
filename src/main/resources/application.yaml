@@ -3,9 +3,17 @@ spring:
     name: healthcare
   data:
     mongodb:
-      database: patient
+      database: patientsDB
       port: 27017
       host: localhost
+    neo4j:
+      database: neo4j
+  neo4j:
+    uri: bolt://localhost:7687
+    authentication:
+      username: neo4j
+      password: momen@1234
 
 server:
   port: 8081
+

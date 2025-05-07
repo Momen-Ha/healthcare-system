@@ -10,7 +10,7 @@ import ppu.momen.healthcare.model.Patient;
 import ppu.momen.healthcare.service.PatientService;
 
 @RestController
-@RequestMapping("/api/patients")
+@RequestMapping("/healthcare/patients")
 public class PatientController {
 
     private final PatientService patientService;
