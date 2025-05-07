@@ -1,3 +1,8 @@
 spring:
   application:
     name: healthcare
+  data:
+    mongodb:
+      database: patient
+      port: 27017
+      host: localhost
