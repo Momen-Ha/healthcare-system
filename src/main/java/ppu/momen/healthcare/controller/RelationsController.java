@@ -29,7 +29,7 @@ public class RelationsController {
         }
     }
 
-    @GetMapping("/neo4j/patients")
+    @GetMapping("/patients")
     public List<PatientNode> allNeo4jPatients() {
         return relationsService.getAllPatientNodes();
     }
@@ -40,7 +40,7 @@ public class RelationsController {
         return ResponseEntity.ok(doctor);
     }
 
-    @GetMapping("/patient/{patientNumber}")
+    @GetMapping("patients/{patientNumber}")
     public ResponseEntity<PatientNode> getPatientById(@PathVariable String patientNumber) {
         PatientNode patientNode = relationsService.getPatientById(patientNumber);
         return ResponseEntity.ok(patientNode);

@@ -6,4 +6,5 @@ import ppu.momen.healthcare.model.PatientNode;
 
 @Repository
 public interface PatientNodeRepository extends Neo4jRepository<PatientNode, String> {
+
 }

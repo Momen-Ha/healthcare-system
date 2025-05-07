@@ -15,8 +15,13 @@ public interface RelationsRepository extends Neo4jRepository<Doctor, String> {
     @Query("MATCH (d:Doctor {id: $doctorId}) RETURN d")
     Optional<Doctor> findDoctorNodeById(String doctorId);
 
-    @Query("MATCH (p:PatientNode {patientNumber: $patientNumber}) RETURN p")
+    @Query("MATCH (p:PatientNode {patientNumber: $patientNumber}) " +
+            "OPTIONAL MATCH (d:Doctor)-[:TREATS]->(p) " +
+            "WITH p, collect(d) AS doctors " +
+            "RETURN p { .patientNumber, .name, doctors: doctors } AS patient")
     Optional<PatientNode> findPatientNodeById(String patientNumber);
+
+
 
     @Query("MATCH (d:Doctor {id: $doctorId})-[:TREATS]->(p:PatientNode) RETURN p")
     List<PatientNode> findPatientsByDoctorId(String doctorId);
