@@ -39,7 +39,7 @@ public class PatientController {
         return ResponseEntity.ok(PatientMapper.toResponse(p));
     }
 
-    @PatchMapping("/{patientNumber}")
+    @PutMapping("/{patientNumber}")
     public ResponseEntity<PatientResponse> update(@PathVariable String patientNumber,
                                                   @RequestBody PatientRequest request) {
         Patient updated = patientService.updatePatient(patientNumber, request);
