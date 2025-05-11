@@ -17,17 +17,21 @@ public class PatientMeasurementsService {
     private final WriteApiBlocking writeApi;
     private final InfluxDBClient client;
     private final String bucket;
+    private final AbnormalMeasurementsChecker abnormalMeasurementsChecker;
 
     public PatientMeasurementsService(WriteApiBlocking writeApi,
-                              InfluxDBClient client,
-                              @Value("${spring.influxdb.bucket}") String bucket) {
+                                      InfluxDBClient client,
+                                      @Value("${spring.influxdb.bucket}") String bucket, AbnormalMeasurementsChecker abnormalMeasurementsChecker) {
         this.writeApi = writeApi;
         this.client   = client;
         this.bucket   = bucket;
+        this.abnormalMeasurementsChecker = abnormalMeasurementsChecker;
     }
 
     /** Write a measurement as a time-series point */
     public void record(PatientMeasurement m) {
+        abnormalMeasurementsChecker.checkMeasurements(m);
+
         m.setTimestamp(Instant.now());
         writeApi.writePoint(
                 com.influxdb.client.write.Point.measurement("vitals")

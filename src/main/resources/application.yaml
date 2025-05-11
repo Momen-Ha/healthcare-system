@@ -21,6 +21,9 @@ spring:
     bucket: patient_measurements
     retention-policy: 30d
 
+  redis:
+    host: localhost
+    port: 6379
 server:
   port: 8081
 
