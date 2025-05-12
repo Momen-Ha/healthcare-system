@@ -5,6 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ppu.momen.healthcare.dto.PatientRequest;
 import ppu.momen.healthcare.dto.PatientResponse;
+import ppu.momen.healthcare.model.AbnormalReading;
+import ppu.momen.healthcare.service.CacheService;
 import ppu.momen.healthcare.service.PatientService;
 
 import java.util.List;
@@ -14,9 +16,11 @@ import java.util.List;
 public class PatientController {
 
     private final PatientService patientService;
+    private final CacheService cacheService;
 
-    public PatientController(PatientService patientService) {
+    public PatientController(PatientService patientService, CacheService cacheService) {
         this.patientService = patientService;
+        this.cacheService = cacheService;
     }
 
 
@@ -55,6 +59,12 @@ public class PatientController {
     public ResponseEntity<Void> delete(@PathVariable String patientNumber) {
         patientService.deletePatient(patientNumber);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/abnormal-readings/{patientNumber}")
+    public ResponseEntity<List<AbnormalReading>> getPatientAbnormalReadings(@PathVariable String patientNumber) {
+        List<AbnormalReading> readings = cacheService.getAbnormalReadings(patientNumber);
+        return ResponseEntity.ok(readings);
     }
 }
 

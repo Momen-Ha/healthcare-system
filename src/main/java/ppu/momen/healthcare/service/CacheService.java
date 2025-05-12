@@ -26,8 +26,16 @@ public class CacheService {
     public List<AbnormalReading> getAbnormalReadings(String patientNumber) {
         String key = String.format("abnormal:%s", patientNumber);
         Object value = redisTemplate.opsForValue().get(key);
-        return value != null
-                ? (List<AbnormalReading>) value
-                : Collections.emptyList();
+
+        if (value == null) {
+            return Collections.emptyList();
+        }
+
+        try {
+            return (List<AbnormalReading>) value;
+        } catch (ClassCastException e) {
+            throw new RuntimeException("Stored data is not a valid list of abnormal readings", e);
+        }
     }
+
 }
