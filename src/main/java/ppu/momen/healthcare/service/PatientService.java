@@ -1,14 +1,18 @@
 package ppu.momen.healthcare.service;
 
 import org.springframework.stereotype.Service;
+import ppu.momen.healthcare.dto.PatientMapper;
 import ppu.momen.healthcare.dto.PatientRequest;
+import ppu.momen.healthcare.dto.PatientResponse;
 import ppu.momen.healthcare.model.MedicalInfo;
 import ppu.momen.healthcare.model.Patient;
 import ppu.momen.healthcare.repository.PatientRepository;
 
 import java.time.Year;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class PatientService {
@@ -21,14 +25,21 @@ public class PatientService {
         this.relationsService = relationsService;
     }
 
+    public List<PatientResponse> getAllPatients() {
+        return patientRepository.findAll().stream()
+                .map(PatientMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
     private String generatePatientNumber() {
         String year = String.valueOf(Year.now().getValue());
         String randomPart = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         return "PAT-" + year + "-" + randomPart;
     }
 
-    public Patient createPatient(PatientRequest patientRequest) {
+    public PatientResponse createPatient(PatientRequest patientRequest) {
         String patientNumber = generatePatientNumber();
+
         Patient patient = Patient.builder()
                 .patientNumber(patientNumber)
                 .fullName(patientRequest.getFullName())
@@ -42,25 +53,30 @@ public class PatientService {
                 .build();
 
         relationsService.createPatient(patientNumber, patientRequest.getFullName());
-        return patientRepository.save(patient);
+        return PatientMapper.toResponse(patientRepository.save(patient));
     }
 
-    public Patient getPatientByPatientNumber(String patientNumber) {
-        Optional<Patient> optionalPatient = patientRepository.findByPatientNumber(patientNumber);
-        return optionalPatient.orElseThrow(() -> new RuntimeException("Patient not found with number: " + patientNumber));
+    public PatientResponse getPatientByPatientNumber(String patientNumber) {
+        Patient patient = patientRepository.findByPatientNumber(patientNumber)
+                .orElseThrow(() -> new RuntimeException("Patient not found with number: " + patientNumber));
+        return PatientMapper.toResponse(patient);
     }
 
-    public Patient getPatientByNationalId(String nationalId) {
-        Optional<Patient> optionalPatient = patientRepository.findByNationalId(nationalId);
-        return optionalPatient.orElseThrow(() -> new RuntimeException("Patient not found with national ID: " + nationalId));
+    public PatientResponse getPatientByNationalId(String nationalId) {
+        Patient patient = patientRepository.findByNationalId(nationalId)
+                .orElseThrow(() -> new RuntimeException("Patient not found with national ID: " + nationalId));
+        return PatientMapper.toResponse(patient);
     }
+
     public void deletePatient(String patientNumber) {
-        Patient patient = getPatientByPatientNumber(patientNumber);
+        Patient patient = patientRepository.findByPatientNumber(patientNumber)
+                .orElseThrow(() -> new RuntimeException("Patient not found with number: " + patientNumber));
         patientRepository.delete(patient);
     }
 
-    public Patient updatePatient(String patientNumber, PatientRequest updatedData) {
-        Patient existingPatient = getPatientByPatientNumber(patientNumber);
+    public PatientResponse updatePatient(String patientNumber, PatientRequest updatedData) {
+        Patient existingPatient = patientRepository.findByPatientNumber(patientNumber)
+                .orElseThrow(() -> new RuntimeException("Patient not found with number: " + patientNumber));
 
         if (updatedData.getFullName() != null) {
             existingPatient.setFullName(updatedData.getFullName());
@@ -76,10 +92,8 @@ public class PatientService {
         }
 
         if (updatedData.getMedicalInfo() != null) {
-            MedicalInfo existingMedicalInfo = existingPatient.getMedicalInfo();
-            if (existingMedicalInfo == null) {
-                existingMedicalInfo = new MedicalInfo();
-            }
+            MedicalInfo existingMedicalInfo = Optional.ofNullable(existingPatient.getMedicalInfo())
+                    .orElse(new MedicalInfo());
 
             MedicalInfo newMedicalInfo = updatedData.getMedicalInfo();
 
@@ -108,7 +122,7 @@ public class PatientService {
             existingPatient.setMedicalInfo(existingMedicalInfo);
         }
 
-        return patientRepository.save(existingPatient);
+        return PatientMapper.toResponse(patientRepository.save(existingPatient));
     }
 
 

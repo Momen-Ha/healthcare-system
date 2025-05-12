@@ -70,25 +70,16 @@ public class PatientMeasurementsService {
                 });
 
                 switch (Objects.requireNonNull(record.getField())) {
-                    case "heart_rate":
-                        m.setHeartRate(((Number) Objects.requireNonNull(record.getValue())).intValue());
-                        break;
-                    case "body_temperature":
-                        m.setBodyTemperature(((Number) Objects.requireNonNull(record.getValue())).doubleValue());
-                        break;
-                    case "systolic_pressure":
-                        m.setSystolicPressure(((Number) Objects.requireNonNull(record.getValue())).intValue());
-                        break;
-                    case "diastolic_pressure":
-                        m.setDiastolicPressure(((Number) Objects.requireNonNull(record.getValue())).intValue());
-                        break;
-                    case "blood_glucose":
-                        m.setBloodGlucose(((Number) Objects.requireNonNull(record.getValue())).doubleValue());
-                        break;
-                    case "spo2":
-                        m.setSpo2(((Number) Objects.requireNonNull(record.getValue())).intValue());
-                        break;
+                    case "heartRate"           -> m.setHeartRate(((Number) record.getValue()).intValue());
+                    case "bodyTemperature"     -> m.setBodyTemperature(((Number) record.getValue()).doubleValue());
+                    case "systolicPressure"    -> m.setSystolicPressure(((Number) record.getValue()).intValue());
+                    case "diastolicPressure"   -> m.setDiastolicPressure(((Number) record.getValue()).intValue());
+                    case "bloodGlucose"        -> m.setBloodGlucose(((Number) record.getValue()).doubleValue());
+                    case "spo2"                -> m.setSpo2(((Number) record.getValue()).intValue());
+                    default                    -> {
+                    }
                 }
+
             }
         }
 

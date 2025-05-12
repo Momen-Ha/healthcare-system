@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 import ppu.momen.healthcare.model.Doctor;
 import ppu.momen.healthcare.model.PatientNode;
 import ppu.momen.healthcare.repository.PatientNodeRepository;
-import ppu.momen.healthcare.repository.PatientRepository;
 import ppu.momen.healthcare.repository.RelationsRepository;
 
 import java.util.List;
@@ -24,19 +23,16 @@ public class RelationsService {
         return patientNodeRepository.findAll();
     }
 
-    // Get doctor node by ID
     public Doctor getDoctorById(String doctorId) {
         return relationsRepository.findDoctorNodeById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found with ID: " + doctorId));
     }
 
-    // Get patient node by patientNumber
     public PatientNode getPatientById(String patientNumber) {
         return relationsRepository.findPatientNodeById(patientNumber)
                 .orElseThrow(() -> new RuntimeException("Patient not found with patientNumber: " + patientNumber));
     }
 
-    // Create new doctor node
     public Doctor createDoctor(String doctorId, String name) {
         Doctor doctor = new Doctor();
         doctor.setId(doctorId);
@@ -56,7 +52,6 @@ public class RelationsService {
         }
     }
 
-    // Add patient to doctor (create relationship)
     public Doctor addPatientToDoctor(String doctorId, String patientNumber) {
         Doctor doctor = getDoctorById(doctorId);
         PatientNode patientNode = patientNodeRepository.findById(patientNumber)
@@ -74,12 +69,10 @@ public class RelationsService {
         }
     }
 
-    // Get doctor's patients
     public List<PatientNode> getPatientsByDoctorId(String doctorId) {
         return relationsRepository.findPatientsByDoctorId(doctorId);
     }
 
-    // Find patient's doctors
     public List<Doctor> getDoctorsByPatientNumber(String patientNumber) {
         return relationsRepository.findDoctorsByPatientNumber(patientNumber);
     }

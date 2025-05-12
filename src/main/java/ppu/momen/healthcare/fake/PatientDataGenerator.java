@@ -1,4 +1,4 @@
-package ppu.momen.healthcare.configuration;
+package ppu.momen.healthcare.fake;
 
 import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
