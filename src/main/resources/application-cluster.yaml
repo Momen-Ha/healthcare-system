@@ -1,0 +1,21 @@
+spring:
+  data:
+    mongodb:
+      uri: "mongodb://localhost:27016/patientsDB?readPreference=primaryPreferred"
+
+    redis:
+      sentinel:
+        master: "mymaster"
+        nodes:
+          - "localhost:26379"
+  neo4j:
+    uri: "neo4j://localhost:7687,localhost:7688,localhost:7689"
+    authentication:
+      username: "neo4j"
+      password: "momen@1234"
+
+  influx:
+    url: "http://localhost:8086"
+    username: "admin"
+    password: "admin"
+    database: "patient_measurements"

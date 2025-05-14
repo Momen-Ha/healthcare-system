@@ -1,0 +1,206 @@
+version: "3.8"
+
+############################################
+#  Healthcare-System NoSQL Mega-Stack      #
+############################################
+
+networks:
+  nosql_net:
+    driver: bridge
+
+volumes:
+  mongo_config:
+  mongo_shard1:
+  mongo_shard2:
+  influx_meta1:
+  influx_meta2:
+  influx_meta3:
+  influx_data1:
+  influx_data2:
+  influx_data3:
+  neo1_data:
+  neo2_data:
+  neo3_data:
+  redis_master_data:
+  redis_replica_data:
+
+services:
+
+  ###############################
+  # MongoDB Sharded Cluster    #
+  ###############################
+  mongo-configsvr:
+    image: mongo:6.0
+    command: --configsvr --replSet csReplSet --port 27019
+    volumes:
+      - mongo_config:/data/db
+    networks:
+      - nosql_net
+
+  mongo-shard1:
+    image: mongo:6.0
+    command: --shardsvr --replSet shard01 --port 27018
+    volumes:
+      - mongo_shard1:/data/db
+    networks:
+      - nosql_net
+
+  mongo-shard2:
+    image: mongo:6.0
+    command: --shardsvr --replSet shard02 --port 27017
+    volumes:
+      - mongo_shard2:/data/db
+    networks:
+      - nosql_net
+
+  mongos:
+    image: mongo:6.0
+    depends_on:
+      - mongo-configsvr
+      - mongo-shard1
+      - mongo-shard2
+    command: mongos --configdb csReplSet/mongo-configsvr:27019 --port 27016
+    ports:
+      - "27016:27016"
+    networks:
+      - nosql_net
+
+  mongo-init:
+    image: mongo:6.0
+    depends_on:
+      - mongos
+    entrypoint: ["bash", "-c"]
+    command: |
+      sleep 5 && \
+      mongosh --host mongo-configsvr:27019 --eval 'rs.initiate({_id:"csReplSet",configsvr:true,members:[{_id:0,host:"mongo-configsvr:27019"}]})' && \
+      mongosh --host mongo-shard1:27018 --eval 'rs.initiate({_id:"shard01",members:[{_id:0,host:"mongo-shard1:27018"}]})' && \
+      mongosh --host mongo-shard2:27017 --eval 'rs.initiate({_id:"shard02",members:[{_id:0,host:"mongo-shard2:27017"}]})' && \
+      mongosh --host mongos:27016 --eval 'sh.addShard("shard01/mongo-shard1:27018"); sh.addShard("shard02/mongo-shard2:27017"); sh.enableSharding("patientsDB"); sh.shardCollection("patientsDB.patients", {region:1});'
+    networks:
+      - nosql_net
+    restart: "no"
+
+  #################################
+  # InfluxDB Cluster (open fork)  #
+  #################################
+  influx-meta-1:
+    image: chengshiwen/influxdb-meta:1.8
+    volumes:
+      - influx_meta1:/var/lib/influxdb/meta
+    environment:
+      META_HTTP_BIND_ADDRESS: ":8091"
+    networks:
+      - nosql_net
+
+  influx-meta-2:
+    image: chengshiwen/influxdb-meta:1.8
+    volumes:
+      - influx_meta2:/var/lib/influxdb/meta
+    environment:
+      META_HTTP_BIND_ADDRESS: ":8091"
+    networks:
+      - nosql_net
+
+  influx-meta-3:
+    image: chengshiwen/influxdb-meta:1.8
+    volumes:
+      - influx_meta3:/var/lib/influxdb/meta
+    environment:
+      META_HTTP_BIND_ADDRESS: ":8091"
+    networks:
+      - nosql_net
+
+  influx-data-1:
+    image: chengshiwen/influxdb-data:1.8
+    depends_on:
+      - influx-meta-1
+    volumes:
+      - influx_data1:/var/lib/influxdb/data
+    environment:
+      INFLUXDB_DATA_DIR: /var/lib/influxdb/data
+      META_SERVERS: influx-meta-1:8091,influx-meta-2:8091,influx-meta-3:8091
+    networks:
+      - nosql_net
+
+  influx-data-2:
+    image: chengshiwen/influxdb-data:1.8
+    depends_on:
+      - influx-meta-1
+    volumes:
+      - influx_data2:/var/lib/influxdb/data
+    environment:
+      INFLUXDB_DATA_DIR: /var/lib/influxdb/data
+      META_SERVERS: influx-meta-1:8091,influx-meta-2:8091,influx-meta-3:8091
+    networks:
+      - nosql_net
+
+  influx-data-3:
+    image: chengshiwen/influxdb-data:1.8
+    depends_on:
+      - influx-meta-1
+    volumes:
+      - influx_data3:/var/lib/influxdb/data
+    environment:
+      INFLUXDB_DATA_DIR: /var/lib/influxdb/data
+      META_SERVERS: influx-meta-1:8091,influx-meta-2:8091,influx-meta-3:8091
+    networks:
+      - nosql_net
+
+  ###############################
+  # Neo4j Causal Cluster (3x)   #
+  ###############################
+  neo1:
+    image: neo4j:5.17-enterprise
+    environment:
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
+      - NEO4J_server_default__listen__address=0.0.0.0
+      - NEO4J_server_bolt_listen__address=:7687
+      - NEO4J_server_http_listen__address=:7474
+      - NEO4J_server_cluster_system_database_mode=PRIMARY
+      - NEO4J_initial_server_mode_constraint=PRIMARY
+      - NEO4J_server_cluster_listen__address=:5000
+      - NEO4J_server_cluster_initial__members=neo1:5000,neo2:5000,neo3:5000
+      - NEO4J_server_cluster_raft_listen__address=:7000
+    volumes:
+      - neo1_data:/data
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    networks:
+      - nosql_net
+
+  neo2:
+    image: neo4j:5.17-enterprise
+    environment:
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
+      - NEO4J_server_default__listen__address=0.0.0.0
+      - NEO4J_server_bolt_listen__address=:7687
+      - NEO4J_server_http_listen__address=:7474
+      - NEO4J_server_cluster_system_database_mode=PRIMARY
+      - NEO4J_initial_server_mode_constraint=PRIMARY
+      - NEO4J_server_cluster_listen__address=:5000
+      - NEO4J_server_cluster_initial__members=neo1:5000,neo2:5000,neo3:5000
+      - NEO4J_server_cluster_raft_listen__address=:7000
+    volumes:
+      - neo2_data:/data
+    networks:
+      - nosql_net
+
+  neo3:
+    image: neo4j:5.17-enterprise
+    environment:
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
+      - NEO4J_server_default__listen__address=0.0.0.0
+      - NEO4J_server_bolt_listen__address=:7687
+      - NEO4J_server_http_listen__address=:7474
+      - NEO4J_server_cluster_system_database_mode=PRIMARY
+      - NEO4J_initial_server_mode_constraint=PRIMARY
+      - NEO4J_server_cluster_listen__address=:5000
+      - NEO4J_server_cluster_initial__members=neo1:5000,neo2:5000,neo3:5000
+      - NEO4J_server_cluster_raft_listen__address=:7000
+    volumes:
+      - neo3_data:/data
+    networks:
+      - nosql_net
+
+

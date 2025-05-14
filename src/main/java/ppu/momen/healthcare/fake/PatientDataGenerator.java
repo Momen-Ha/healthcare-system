@@ -4,32 +4,71 @@ import com.github.javafaker.Faker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import ppu.momen.healthcare.model.Doctor;
 import ppu.momen.healthcare.model.MedicalInfo;
 import ppu.momen.healthcare.model.Patient;
+import ppu.momen.healthcare.model.PatientNode;
+import ppu.momen.healthcare.repository.PatientNodeRepository;
 import ppu.momen.healthcare.repository.PatientRepository;
+import ppu.momen.healthcare.repository.RelationsRepository;
 import ppu.momen.healthcare.service.RelationsService;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 
 @Component
 @RequiredArgsConstructor
 public class PatientDataGenerator implements CommandLineRunner {
 
-    private final PatientRepository patientRepository;
+    private final PatientRepository mongoPatientRepo;
+    private final PatientNodeRepository graphPatientRepo;
+    private final RelationsRepository relationsRepo;
     private final RelationsService relationsService;
     private final Faker faker = new Faker();
 
     @Override
     public void run(String... args) {
-        if (patientRepository.count() == 0) {
-            List<Patient> patients = generateFakePatients(100);
-            patientRepository.saveAll(patients);
-            System.out.println("Inserted 100 fake patients!");
-        } else {
-            System.out.println("Patients already exist. Skipping seeding.");
+        boolean seedMongo = mongoPatientRepo.count() == 0;
+        boolean seedGraph = graphPatientRepo.count() == 0;
+
+        if (!seedMongo && !seedGraph) {
+            System.out.println("Data already exists. Skipping seeding.");
+            return;
         }
+
+        List<Doctor> doctors = generateFakeDoctors(10);
+        relationsRepo.saveAll(doctors);
+
+        List<Patient> patients = generateFakePatients(100);
+        if (seedMongo) {
+            mongoPatientRepo.saveAll(patients);
+            System.out.println("Inserted " + patients.size() + " fake patients into MongoDB!");
+        }
+        if (seedGraph) {
+            List<PatientNode> patientNodes = patients.stream()
+                    .map(p -> new PatientNode(p.getPatientNumber(), p.getFullName()))
+                    .toList();
+            graphPatientRepo.saveAll(patientNodes);
+            System.out.println("Inserted " + patientNodes.size() + " PatientNode into Neo4j!");
+        }
+
+        for (Patient p : patients) {
+            List<String> docIds = new ArrayList<>(doctors.stream().map(Doctor::getId).toList());
+            Collections.shuffle(docIds);
+            int cnt = new Random().nextInt(3) + 1;
+            for (String did : docIds.subList(0, cnt)) {
+                relationsService.addPatientToDoctor(did, p.getPatientNumber());
+            }
+        }
+        System.out.println("Patient-doctor relationships created in Neo4j!");
+    }
+
+    public List<Doctor> generateFakeDoctors(int count) {
+        List<Doctor> doctors = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            doctors.add(new Doctor(UUID.randomUUID().toString(), faker.name().fullName(), new ArrayList<>()));
+        }
+        return doctors;
     }
 
     public List<Patient> generateFakePatients(int count) {
@@ -53,7 +92,7 @@ public class PatientDataGenerator implements CommandLineRunner {
                 .nationalId(faker.idNumber().valid())
                 .phoneNumber(faker.phoneNumber().phoneNumber())
                 .address(faker.address().streetAddress())
-                .city(faker.address().city())
+                .city(faker.options().option("Hebron", "Ramallah", "Jerusalem"))
                 .medicalInfo(generateFakeMedicalInfo())
                 .build();
     }
